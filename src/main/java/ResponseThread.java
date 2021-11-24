@@ -5,10 +5,17 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalTime;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
 public class ResponseThread implements Runnable {
+
+    final static List<String> availablePages = List.of("/index.html", "/spring.svg", "/spring.png", "/resources.html",
+            "/styles.css",
+            "/app.js", "/links.html", "/forms.html", "/classic.html", "/events.html", "/events.js");
 
     private BufferedReader in;
     private BufferedOutputStream out;
@@ -27,7 +34,7 @@ public class ResponseThread implements Runnable {
             final var parts = requestLine.split(" ");
 
             if (parts.length != 3) {
-                out.write(createResponse("HTTP/1.1 501 Not Implemented",
+                out.write(createResponse("HTTP/1.1 400 Bad Request",
                         Map.of(
                                 "Content-Length", "0",
                                 "Connection", "close")).getBytes()
@@ -37,7 +44,7 @@ public class ResponseThread implements Runnable {
             }
 
             final var path = parts[1];
-            if (!Server.validPaths.contains(path)) {
+            if (!availablePages.contains(path)) {
                 out.write(createResponse("HTTP/1.1 404 Not Found",
                         Map.of(
                                 "Content-Length", "0",
@@ -46,7 +53,7 @@ public class ResponseThread implements Runnable {
                 out.flush();
                 return;
             }
-            final var content = createAResponseWithAFile(path, Server.filesAndTheirVariablesWithValues());
+            final var content = createResponseWithAFile(path, filesAndTheirVariablesWithValues());
             out.write(content.getBytes());
             out.flush();
         } catch (IOException exception) {
@@ -56,7 +63,7 @@ public class ResponseThread implements Runnable {
 
     }
 
-    private String createAResponseWithAFile(String filePath, Map<String, Map<String, String>> fileVariables) throws IOException {
+    private String createResponseWithAFile(String filePath, Map<String, Map<String, String>> fileVariables) throws IOException {
         final var currentFilePath = Path.of(".", "public", filePath);
         final var mimeType = Files.probeContentType(currentFilePath);
         var template = Files.readString(currentFilePath);
@@ -90,5 +97,13 @@ public class ResponseThread implements Runnable {
         }
         responseBuilder.append("\r\n");
         return responseBuilder.toString();
+    }
+
+    private Map<String, Map<String, String>> filesAndTheirVariablesWithValues() {
+        Map<String, Map<String, String>> maps = new HashMap<>();
+        Map<String, String> classicFileVariables = Map.of("{time}", LocalTime.now().toString());
+        maps.put("/classic.html", classicFileVariables);
+
+        return maps;
     }
 }
