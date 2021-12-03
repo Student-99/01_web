@@ -75,14 +75,14 @@ public class ResponseThread implements Runnable {
                                     "Connection", "close",
                                     "Accept-Language","ru,en"),
                             template);
-                    sendRequest(response.getBytes());
+                    sendResponse(response.getBytes());
                     return;
                 }
             }
 
             final var content = createResponseWithAFile(path, filesAndTheirVariablesWithValues());
 
-            sendRequest(content.getBytes());
+            sendResponse(content.getBytes());
         } catch (IOException | URISyntaxException exception) {
             exception.printStackTrace();
         }
@@ -90,7 +90,7 @@ public class ResponseThread implements Runnable {
 
     }
 
-    private void sendRequest(byte[] request) throws IOException {
+    private void sendResponse(byte[] request) throws IOException {
         out.write(request);
         out.flush();
     }
